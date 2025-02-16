@@ -13,25 +13,27 @@ Second goal is to determine if parallelization is implemented internally in Pyto
 The table below shows execution time of sentence transformer and direct calculation in sec for different batch sizes for num_threads = 1
 
 num_threads=1
-Batch Size\Execution Time | Sentence Transformer | Direct Calculation |
-+---------------------------+----------------------+--------------------+
+
+
+|Batch Size\Execution Time (sec) | Sentence Transformer | Direct Calculation |
+|---------------------------|----------------------|--------------------|
 |            100            |         1.75         |        1.35        |
 |            600            |        10.25         |        8.10        |
 |            1100           |        18.95         |       14.90        |
 |            1600           |        27.35         |       22.05        |
-+---------------------------+----------------------+------------------
+
 
 This table below shows the same results for num_threads = 10
 
 num_threads=10
-+---------------------------+----------------------+--------------------+
-| Batch Size\Execution Time | Sentence Transformer | Direct Calculation |
-+---------------------------+----------------------+--------------------+
+
+| Batch Size\Execution Time (sec) | Sentence Transformer | Direct Calculation |
+|---------------------------|----------------------|--------------------|
 |            100            |  1.022   | 0.59  |
 |            600            |  5.66    | 3.55   |
 |            1100           |  10.37   | 6.62  |
 |            1600           |  15.177  | 9.50  |
-+---------------------------+----------------------+--------------------+
+
 
 The execution time is much lower for num_threads=10 than when num_threads=1, implying that there is tensor-level parallelism built into Pytorch. CPU utilization graph in the nmon utility validates this as well. 
 
@@ -43,18 +45,17 @@ The goal is to evaluate performance of batch execution on CPU and GPU. As expect
 
 ## Experiment 3
 
-The goal is to investigate if distributing batch execution over multiple CPUs using Python multi-processing is effective in lowering execution time. The answer 
+The goal is to investigate if distributing batch execution over multiple CPUs using Python multi-processing is effective in lowering execution time. This experiment suggests no, as the table below shows. I suspect the reason is that Pytorch already implements thread-level parallelism, and multiprocessing operating on top of multi-threading just adds overhead. However results on larger, more compute intensive data and models could be different. 
 
- num_proc
-Execution time
-1
-1.95
-2
-1.68
-3
-3.17
-4
-3.94
+Some other points to note about multi-processing. Python's multi-processing pool can be initiated using fork or spawn methods, with subtle differences in behavior. The processing initialization method (which I use to load the models) executes asynchronously.. To measure distributed processing time separately from process initialization, I call a dummy function on the process pool, which forces the initializer to execute. 
+
+| number of processes | Execution time (sec)| 
+|---------------------------|----------------------|
+| 1 | 1.95 | 
+| 2| 1.68 | 
+| 3 | 3.17 | 
+| 4 | 3.94 | 
+
 
 
 
